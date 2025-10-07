@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Brain Buzz-Quiz</title>
+    <!-- Load Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+    <style>
+        /* Custom styles for aesthetic enhancements */
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #1f2937 0%, #000000 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            /* Prevent body scrolling when swiping forms */
+            overflow-x: hidden;
+        }
+        .card-glow {
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1), 0 0 40px rgba(59, 130, 246, 0.5);
+        }
+        /* Custom scrollbar for desktop experience */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background-color: #3b82f6;
+            border-radius: 4px;
+        }
+        /* Disable text selection during drag/swipe */
+        .dragging {
+            user-select: none;
+            cursor: grabbing;
+        }
+    </style>
+</head>
+<body class="p-4 sm:p-8">
+
+    <div id="app" class="w-full max-w-lg mx-auto">
+        <!-- The max-w-lg is used here instead of max-w-4xl because we are showing only one column at a time -->
+
+        <!-- Header & Live Clock -->
+        <header class="text-center mb-10 text-white">
+            <h1 class="text-4xl sm:text-5xl font-extrabold mb-2 tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-indigo-600">
+                BRAIN BUZZ - QUIZ 
+            </h1>
+            <p id="live-clock" class="text-xl font-medium text-gray-300"></p>
+        </header>
+
+        <!-- Main Content Card -->
+        <div class="bg-gray-800 rounded-2xl p-6 sm:p-8 card-glow border border-blue-700/50">
+
+            <!-- Event Information & Countdown (Kept for date/time functionality) -->
+            <div class="mb-8 p-4 bg-gray-700/50 rounded-xl text-center shadow-lg">
+                <h2 class="text-2xl font-bold text-blue-400 mb-2">Brain Buzz-Quiz</h2>
+                <p class="text-gray-300 text-lg">
+                    Starts on: <span class="font-semibold text-white" id="event-date">October 8 , 2025 at 10:30:00 UTC</span>
+                </p>
+                <div id="countdown" class="text-white text-3xl font-extrabold mt-3">--:----</div>
+            </div>
+
+            <!-- Authentication Container (SWIPE LAYOUT) -->
+            <div id="auth-container" class="relative overflow-hidden mt-8 rounded-xl">
+                
+                <!-- Swipe Track - Contains all slides (200% width) -->
+                <div id="slider-track" class="flex w-[200%] transition-transform duration-300 ease-in-out touch-pan-y">
+
+                    <!-- Column 1: Login Form (Slide 1) -->
+                    <div class="w-1/2 flex-shrink-0 p-2 sm:p-4">
+                        <div class="bg-gray-700 p-6 rounded-xl shadow-xl border border-blue-500/30">
+                            <h3 class="text-2xl font-bold text-blue-300 mb-6 text-center">Round 1</h3>
+                            <form id="login-form">
+                                <div class="mb-4">
+                                    <label for="login-username" class="block text-gray-300 font-semibold mb-2">Username</label>
+                                    <input type="text" id="login-username" class="w-full px-4 py-3 rounded-lg bg-gray-900 border border-gray-600 text-white focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Enter your username" required>
+                                </div>
+                                <div class="mb-6">
+                                    <label for="login-password" class="block text-gray-300 font-semibold mb-2">Password</label>
+                                    <input type="password" id="login-password" class="w-full px-4 py-3 rounded-lg bg-gray-900 border border-gray-600 text-white focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="••••••••" required>
+                                </div>
+                                <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl transition duration-150 shadow-lg shadow-blue-500/50">
+                                    Log In
+                                </button>
+                                
+                            </form>
+                        </div>
+                    </div>
+
+                    <!-- Column 2: Admin Login Form (Slide 2) -->
+                    <div class="w-1/2 flex-shrink-0 p-2 sm:p-4">
+                        <div class="bg-gray-700 p-6 rounded-xl shadow-xl border border-green-500/30">
+                            <h3 class="text-2xl font-bold text-green-400 mb-6 text-center">Round 2</h3>
+                            <form id="admin-login-form">
+                                <div class="mb-4">
+                                    <label for="admin-username" class="block text-gray-300 font-semibold mb-2">Username</label>
+                                    <input type="text" id="admin-username" class="w-full px-4 py-3 rounded-lg bg-gray-900 border border-gray-600 text-white focus:outline-none focus:ring-2 focus:ring-green-500" placeholder="Enter your username" required>
+                                </div>
+                                <div class="mb-6">
+                                    <label for="admin-password" class="block text-gray-300 font-semibold mb-2">Password</label>
+                                    <input type="password" id="admin-password" class="w-full px-4 py-3 rounded-lg bg-gray-900 border border-gray-600 text-white focus:outline-none focus:ring-2 focus:ring-green-500" placeholder="••••••••" required>
+                                </div>
+                                <button type="submit" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 rounded-xl transition duration-150 shadow-lg shadow-green-500/50">
+                                     Log In
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+            
+            <!-- Navigation Indicators -->
+            <div id="nav-indicators" class="flex justify-center space-x-2 mt-4">
+                <button id="nav-login" onclick="goToSlide(0)" class="w-3 h-3 rounded-full bg-blue-500 transition-colors shadow-md"></button>
+                <button id="nav-signup" onclick="goToSlide(1)" class="w-3 h-3 rounded-full bg-gray-600 hover:bg-gray-400 transition-colors shadow-md"></button>
+            </div>
+
+
+            <!-- Message/Modal (Used for mock form feedback) -->
+            <div id="message-box" class="hidden fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center p-4 z-50">
+                <div class="bg-gray-800 p-8 rounded-xl shadow-2xl w-full max-w-md text-center border-4 border-blue-500">
+                    <h3 id="message-title" class="text-3xl font-bold mb-4 text-white"></h3>
+                    <p id="message-text" class="text-xl text-gray-300 mb-6"></p>
+                    <button onclick="closeMessage()" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-full transition duration-150 shadow-lg shadow-blue-500/50">
+                        Got It!
+                    </button>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Footer -->
+        <footer class="mt-8 text-center text-gray-400 text-sm">
+            &copy; 2025 Quiz Platform. All rights reserved.
+        </footer>
+    </div>
+
+    <script>
+        // --- AUTHENTICATION MOCK DATA ---
+        // Round 1 (Member) credentials
+        const MEMBER_USERNAME = 'IT@JPR';
+        const MEMBER_PASSWORD = '54321';
+        // Round 2 (Admin) credentials
+        const ADMIN_USERNAME = 'QUIZ@IT';
+        const ADMIN_PASSWORD = '09876';
+
+        // Global variables to store intervals for cleanup
+        let clockInterval;
+        let countdownInterval;
+
+        // --- CLOCK AND COUNTDOWN SETUP ---
+        const eventDateString = document.getElementById('event-date').textContent;
+        const quizEventDate = new Date(eventDateString);
+
+        function updateClock() {
+            const now = new Date();
+            const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true };
+            document.getElementById('live-clock').textContent = 'Current Time: ' + now.toLocaleTimeString('en-US', options);
+        }
+
+        function updateCountdown() {
+            const now = new Date().getTime();
+            const distance = quizEventDate.getTime() - now;
+            const countdownEl = document.getElementById('countdown');
+
+            // Check if the quiz time has passed or if calculation results in NaN (error)
+            if (distance < 0 || isNaN(distance)) {
+                countdownEl.innerHTML = "Participation Login";
+                return;
+            }
+
+            const days = Math.floor(distance / (1000 * 60 * 60 * 24));
+            const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+            const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+
+            countdownEl.innerHTML = `Starts in: ${days}d ${hours}h ${minutes}m ${seconds}s`;
+        }
+
+        /**
+         * Simulates navigating to the main quiz dashboard page by replacing the app content.
+         * @param {string} username - The logged-in user's username.
+         * @param {string} round - The round the user is logging into (e.g., "Round 1").
+         */
+        function navigateToQuizPage(username, round) {
+            // 1. Clear intervals to stop clock and countdown updates
+            clearInterval(clockInterval);
+            clearInterval(countdownInterval);
+            
+            // Determine the target HTML file based on the round (e.g., "Round 1" -> "round1.html")
+            const targetFile = round.toLowerCase().replace(' ', '') + '.html';
+
+            const app = document.getElementById('app');
+            
+            // 2. Replace the entire app content with the new "Quiz Dashboard" page
+            app.innerHTML = `
+                <header class="text-center mb-10 text-white">
+                    <h1 class="text-4xl sm:text-5xl font-extrabold mb-2 tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-indigo-600">
+                        ${round} DASHBOARD
+                    </h1>
+                    <p class="text-xl font-medium text-gray-300">Welcome back, ${username}!</p>
+                </header>
+
+                <div class="bg-gray-800 rounded-2xl p-6 sm:p-8 card-glow border border-blue-700/50 text-white text-center">
+                    <h2 class="text-3xl font-bold mb-4 text-green-400">Login Successful!</h2>
+                    <p class="text-xl mb-6">You have successfully gained access to the **${round}** challenge.</p>
+                    <p class="text-lg mb-8">Click below to start the quiz.</p>
+                    
+                    <button onclick="window.location.href='${targetFile}';" 
+                            class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl transition duration-150 shadow-lg shadow-blue-500/50 text-2xl">
+                        START QUIZ ROUND
+                    </button>
+
+                    <div class="mt-8 pt-4 border-t border-gray-600 text-sm text-gray-400">
+                        Note: Clicking START will attempt to navigate to **${targetFile}**.
+                    </div>
+                </div>
+            `;
+        }
+
+
+        // --- MESSAGE BOX FUNCTIONS (Custom Alert Replacement) ---
+        function showQuizMessage(title, text) {
+            document.getElementById('message-title').textContent = title;
+            document.getElementById('message-text').textContent = text;
+            document.getElementById('message-box').classList.remove('hidden');
+        }
+
+        function closeMessage() {
+            document.getElementById('message-box').classList.add('hidden');
+        }
+
+        // --- SWIPE LOGIC ---
+        const sliderTrack = document.getElementById('slider-track');
+        const authContainer = document.getElementById('auth-container');
+        let currentSlide = 0; // 0 for Round 1, 1 for Round 2
+        let isDragging = false;
+        let startX = 0;
+        let currentTranslate = 0;
+
+        /**
+         * Safely gets the X coordinate from mouse or touch event.
+         * @param {Event} event - The event object (mouse or touch).
+         * @returns {number} The X coordinate.
+         */
+        function getEventX(event) {
+            return event.touches ? event.touches[0].clientX : event.clientX;
+        }
+
+        /**
+         * Starts the drag/swipe operation.
+         * @param {Event} event - The event object.
+         */
+        function handleStart(event) {
+            // Only start dragging if the event is on the container itself or a child element that isn't a form control
+            if (event.target.tagName === 'INPUT' || event.target.tagName === 'BUTTON') return;
+
+            isDragging = true;
+            startX = getEventX(event);
+            sliderTrack.classList.remove('transition-transform');
+            document.body.classList.add('dragging');
+        }
+
+        /**
+         * Handles the drag/swipe movement, updating the track position in real-time.
+         * @param {Event} event - The event object.
+         */
+        function handleMove(event) {
+            if (!isDragging) return;
+            // Prevent scrolling behavior on touch devices during horizontal move
+            if (event.cancelable) event.preventDefault();
+
+            const currentX = getEventX(event);
+            const moveDelta = currentX - startX;
+            const containerWidth = authContainer.offsetWidth;
+            const maxTranslation = 0;
+            const minTranslation = -containerWidth;
+            
+            // Calculate the new translation based on current position and movement delta
+            let newTranslate = currentTranslate + moveDelta;
+
+            // Ensure the new translation stays within bounds
+            if (currentSlide === 0) {
+                newTranslate = Math.min(newTranslate, maxTranslation);
+            } else if (currentSlide === 1) {
+                newTranslate = Math.max(newTranslate, minTranslation);
+            }
+
+            sliderTrack.style.transform = `translateX(${newTranslate}px)`;
+        }
+
+        /**
+         * Ends the drag/swipe operation and finalizes the slide position.
+         */
+        function handleEnd(event) {
+            if (!isDragging) return;
+            isDragging = false;
+            document.body.classList.remove('dragging');
+            sliderTrack.classList.add('transition-transform');
+
+            const endX = getEventX(event);
+            const movedBy = endX - startX;
+            const threshold = authContainer.offsetWidth / 4; // 25% swipe threshold
+
+            let targetSlide = currentSlide;
+
+            if (movedBy < -threshold && currentSlide < 1) {
+                // Swiped left, move to next slide (Admin Login)
+                targetSlide = currentSlide + 1;
+            } else if (movedBy > threshold && currentSlide > 0) {
+                // Swiped right, move to previous slide (Member Login)
+                targetSlide = currentSlide - 1;
+            }
+
+            // Go to the determined slide
+            goToSlide(targetSlide);
+        }
+
+        /**
+         * Updates the UI to show the target slide.
+         * @param {number} slideIndex - The index of the slide to show (0 or 1).
+         */
+        function goToSlide(slideIndex) {
+            currentSlide = Math.min(Math.max(slideIndex, 0), 1); // Clamp between 0 and 1
+            const containerWidth = authContainer.offsetWidth;
+
+            currentTranslate = currentSlide * -containerWidth;
+            sliderTrack.style.transform = `translateX(${currentTranslate}px)`;
+
+            updateNavIndicators();
+        }
+
+        /**
+         * Updates the navigation dots to reflect the current slide.
+         */
+        function updateNavIndicators() {
+            const loginBtn = document.getElementById('nav-login');
+            const signupBtn = document.getElementById('nav-signup');
+
+            if (currentSlide === 0) {
+                loginBtn.classList.replace('bg-gray-600', 'bg-blue-500');
+                signupBtn.classList.replace('bg-blue-500', 'bg-gray-600');
+            } else {
+                loginBtn.classList.replace('bg-blue-500', 'bg-gray-600');
+                signupBtn.classList.replace('bg-gray-600', 'bg-blue-500');
+            }
+        }
+
+        /**
+         * Sets up listeners for the mock Login forms and the swipe events.
+         */
+        function setupListeners() {
+            // --- Member Login Form Submission Logic (Round 1) ---
+            document.getElementById('login-form').addEventListener('submit', function(e) {
+                e.preventDefault();
+                const username = document.getElementById('login-username').value;
+                const password = document.getElementById('login-password').value;
+
+                if (username === MEMBER_USERNAME && password === MEMBER_PASSWORD) {
+                    showQuizMessage("Success!", `Logging in as ${username} for Round 1...`); // Show a brief success message
+                    setTimeout(() => {
+                        navigateToQuizPage(username, "Round 1");
+                    }, 500); // Simulate brief loading time before navigating
+                } else {
+                    showQuizMessage("Login Failed", "Invalid username or password. Please try again.");
+                }
+            });
+
+            // --- Admin Login Form Submission Logic (Round 2) ---
+            document.getElementById('admin-login-form').addEventListener('submit', function(e) {
+                e.preventDefault();
+                const username = document.getElementById('admin-username').value;
+                const password = document.getElementById('admin-password').value;
+
+                // Use admin credentials for Round 2
+                if (username === ADMIN_USERNAME && password === ADMIN_PASSWORD) {
+                    showQuizMessage("Success!", `Logging in as ${username} for Round 2...`); // Show a brief success message
+                    setTimeout(() => {
+                        navigateToQuizPage(username, "Round 2");
+                    }, 500); // Simulate brief loading time before navigating
+                } else {
+                    showQuizMessage("Login Failed", "Invalid Round 2 credentials. Please try again.");
+                }
+            });
+
+            // --- Swipe/Drag Event Listeners ---
+            // Note: Attaching mousemove/mouseup to window for robust drag handling
+            authContainer.addEventListener('mousedown', handleStart);
+            authContainer.addEventListener('touchstart', handleStart);
+            window.addEventListener('mousemove', handleMove);
+            window.addEventListener('touchmove', handleMove);
+            window.addEventListener('mouseup', handleEnd);
+            window.addEventListener('touchend', handleEnd);
+
+            // Re-calculate position on window resize
+            window.addEventListener('resize', () => {
+                // Recalculate and reset to the current slide position
+                goToSlide(currentSlide);
+            });
+        }
+
+
+        // --- INITIALIZATION ---
+        window.onload = function() {
+            updateClock();
+            clockInterval = setInterval(updateClock, 1000);
+
+            updateCountdown();
+            countdownInterval = setInterval(updateCountdown, 1000);
+
+            setupListeners();
+            
+            // Set initial position (important for when the app loads or resizes)
+            goToSlide(0); 
+        }
+    </script>
+</body>
+</html>

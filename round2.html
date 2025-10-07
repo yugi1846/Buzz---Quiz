@@ -1,0 +1,743 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Round 2</title>
+    <!-- Load Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f7f7f7;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .answer-btn {
+            transition: all 0.2s ease-in-out;
+        }
+        .answer-btn:hover:not(.selected):not(.correct):not(.incorrect) {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
+        }
+    </style>
+</head>
+<body>
+
+    <div id="quiz-container" class="w-full max-w-2xl bg-white rounded-xl shadow-2xl p-6 sm:p-10 border border-gray-100">
+
+        <!-- Quiz Header -->
+        <h1 class="text-3xl sm:text-4xl font-bold text-center mb-6 text-indigo-700">Round 2</h1>
+        <!-- Status Bar with Timer -->
+        <div id="status-bar" class="flex flex-col sm:flex-row sm:justify-between items-center mb-8 p-4 bg-indigo-50 rounded-xl shadow-inner border border-indigo-100 space-y-3 sm:space-y-0">
+            <span id="slide-title" class="text-lg font-semibold text-indigo-800 whitespace-nowrap"></span>
+            <!-- Timer Display -->
+            <span id="timer-display" class="text-xl font-extrabold text-red-600 bg-white px-4 py-1 rounded-full shadow-lg border-2 border-red-400 min-w-[100px] text-center transition-colors duration-500">05:00</span>
+            <span id="question-counter" class="text-sm font-medium text-gray-600 bg-white px-3 py-1 rounded-full shadow whitespace-nowrap"></span>
+        </div>
+
+        <!-- Question Area -->
+        <div id="quiz-area">
+            <h2 id="question-text" class="text-xl sm:text-2xl font-semibold mb-6 text-gray-800"></h2>
+            <div id="options-container" class="grid grid-cols-1 gap-4">
+                <!-- Answer buttons will be inserted here -->
+            </div>
+            
+            <div id="feedback-message" class="mt-4 text-center text-lg font-medium hidden"></div>
+
+            <!-- Navigation Button -->
+            <div class="mt-8 flex justify-end">
+                <button id="next-button" onclick="nextQuestion()" class="answer-btn bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-6 rounded-lg shadow-lg opacity-50 cursor-not-allowed" disabled>
+                    Next Question
+                </button>
+            </div>
+        </div>
+
+        <!-- Results Screen (used for intermediate, final, and timeout messages) -->
+        <div id="results-area" class="hidden text-center p-8">
+            <h2 class="text-3xl font-extrabold text-green-700 mb-4">Quiz Complete!</h2>
+            <p id="final-score" class="text-4xl font-bold mb-6 text-gray-800"></p>
+            <div id="score-details" class="text-left bg-gray-50 p-6 rounded-xl border border-gray-200">
+                <!-- Content will be dynamically inserted here -->
+            </div>
+            <!-- Login Button -->
+            <button onclick="handleLogin()" class="mt-8 bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-8 rounded-lg shadow-xl transition transform hover:scale-105">
+                Go to Login Page
+            </button>
+        </div>
+
+    </div>
+
+    <script>
+        // Global variables for Firebase context (required for all apps)
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
+
+        // --- QUIZ DATA ---
+        // Updated to contain 2 slides (20 questions total) to align with "Marks / 20" requirement.
+        const quizData = [
+            // Slide 1: Biology & General Science (10 questions)
+            {
+                title: "Slide 1: Biology & General Science",
+                questions: [
+                    { q: "Which gas is primarily responsible for the bright green color of auroras in the Earth’s polar skies?", options: ["Nitrogen", "Oxygen", "Argon", "Helium"], a: 1 },
+                    { q: "Which element has the highest electrical conductivity at standard conditions?", options: ["Gold", "Copper", "Silver", "Aluminium"], a: 2 },
+                    { q: "In plants, the C4 pathway helps in minimizing:", options: ["Transpiration", "Photorespiration", "Respiration rate", "Nitrogen fixation"], a: 1 },
+                    { q: "Which planet has the shortest day (fastest rotation) in our solar system?", options: ["Earth", "Neptune", "Jupiter", "Saturn"], a: 2 },
+                    { q: "Which scientist proposed the “law of limiting factors” in photosynthesis?", options: ["Blackman", "Liebig", "Calvin", "Mayer"], a: 0 },
+                    { q: "Which of the following animals does not have a true nucleus (eukaryotic cells)?", options: ["Amoeba", "Bacteria", "Euglena", "Paramecium"], a: 1 },
+                    { q: "Which vitamin is most sensitive to heat and gets easily destroyed during cooking?", options: ["Vitamin A", "Vitamin B1 (Thiamine)", "Vitamin C", "Vitamin K"], a: 1 },
+                    { q: "Which metal is liquid at room temperature apart from Mercury?", options: ["Cesium", "Gallium", "Francium", "Both a & b"], a: 3 },
+                    { q: "The ozone layer is most effective in absorbing which type of radiation?", options: ["Infrared", "UV-A", "UV-B", "UV-C"], a: 3 },
+                    { q: "Which type of mirror is used in vehicle headlights to focus light into a strong beam?", options: ["Convex", "Concave", "Plane", "Parabolic Convex"], a: 1 },
+                ]
+            },
+            // Slide 2: General Knowledge & Science (10 questions)
+            {
+                title: "Slide 2: General Knowledge & Science",
+                questions: [
+                    // Q11 - Q15: provided by user
+                    { q: "The theory that continents drifted apart from a supercontinent “Pangaea” was first proposed by:", options: ["Charles Darwin", "Alfred Wegener", "Harry Hess", "James Hutton"], a: 1 },
+                    { q: "Which blood cells are called the “soldiers of the body”?", options: ["Red Blood Cells", "White Blood Cells", "Platelets", "Plasma Cells"], a: 1 },
+                    { q: "The rarest naturally occurring element on Earth’s crust is:", options: ["Francium", "Astatine", "Radon", "Promethium"], a: 1 },
+                    { q: "In which layer of the atmosphere do most weather phenomena occur?", options: ["Stratosphere", "Troposphere", "Mesosphere", "Thermosphere"], a: 1 },
+                    { q: "The tallest grass species in the world is:", options: ["Bamboo", "Sugarcane", "Maize", "Lemongrass"], a: 0 },
+                    // Q16 - Q20: replaced with fill-in-the-blanks questions
+                    { q: "The hardest natural substance found on Earth is __________.", type: "fill", a: "Diamond" },
+                    { q: "The layer of Earth's atmosphere that protects us from harmful UV rays is called the ___________ layer.", type: "fill", a: "ozone" },
+                    { q: "The process by which liquid water turns into solid ice is called __________.", type: "fill", a: "Freezing" },
+                    { q: "The energy received from the Sun is known as __________ energy.", type: "fill", a: "Solar" },
+                    { q: "The world’s largest land animal is the __________.", type: "fill", a: "African Elephant" },
+                ]
+            }
+            // Slide 3 removed. Total questions = 20.
+        ];
+
+        // --- TIMER STATE ---
+        const TIME_LIMIT_SECONDS = 5 * 60; // 5 minutes
+        const SAVED_TIME = sessionStorage.getItem('quizTimeRemaining');
+        // Initialize timeRemaining from session storage, or use the default limit if not found
+        let timeRemaining = SAVED_TIME ? parseInt(SAVED_TIME, 10) : TIME_LIMIT_SECONDS; 
+        let timerInterval;
+
+        // --- QUIZ STATE ---
+        const state = {
+            currentSlideIndex: 0, // 0 to 1 (for 2 slides)
+            currentQuestionIndex: 0, // 0 to 9
+            userAnswers: [], // Stores selected option index for all 20 questions
+            // Array of objects to store individual slide scores: [{correct: 0, total: 10}]
+            slideScores: Array(quizData.length).fill(null).map(() => ({ correct: 0, total: 10 })),
+        };
+
+        // --- DOM ELEMENTS ---
+        const quizArea = document.getElementById('quiz-area');
+        const resultsArea = document.getElementById('results-area');
+        const slideTitleEl = document.getElementById('slide-title');
+        const questionCounterEl = document.getElementById('question-counter');
+        const questionTextEl = document.getElementById('question-text');
+        const optionsContainer = document.getElementById('options-container');
+        const nextButton = document.getElementById('next-button');
+        const feedbackMessageEl = document.getElementById('feedback-message');
+        const timerDisplayEl = document.getElementById('timer-display');
+        const actionButton = resultsArea.querySelector('button');
+        
+        // --- PERSISTENCE KEYS ---
+        const QUIZ_STATE_KEY = 'quizState';
+        const QUIZ_END_FLAG_KEY = 'quizIsFinished'; 
+        const QUIZ_RESULT_TYPE_KEY = 'quizResultType'; 
+        const FINAL_SCORE_KEY = 'finalScore'; 
+
+        // --- GLOBAL QUIZ ACTIVE FLAG for Reload Prevention ---
+        let isQuizActive = false;
+
+        // --- HANDLERS ---
+        
+        /**
+         * Clears session state and navigates to the login page (index.html).
+         */
+        function handleLogin() {
+            console.log("Navigating to Login page (index.html)...");
+            // Clear all quiz state data to allow a fresh start on next load
+            sessionStorage.clear();
+            
+            // Redirect to index.html as requested
+            window.location.href = 'index.html';
+        }
+
+        /**
+         * Confirmation warning when user tries to reload the page mid-quiz.
+         */
+        function handleBeforeUnload(event) {
+            if (isQuizActive) {
+                // Cancel the event and prompt the user (text is often ignored by modern browsers)
+                event.preventDefault();
+                event.returnValue = 'Your progress will be lost if you leave the page. Are you sure?'; 
+            }
+        }
+
+        // --- PERSISTENCE FUNCTIONS ---
+        
+        /**
+         * Saves the current quiz state (slide index, question index, answers) to session storage.
+         */
+        function saveQuizState() {
+            sessionStorage.setItem(QUIZ_STATE_KEY, JSON.stringify({
+                currentSlideIndex: state.currentSlideIndex,
+                currentQuestionIndex: state.currentQuestionIndex,
+                userAnswers: state.userAnswers
+            }));
+        }
+
+        /**
+         * Loads quiz state from session storage if available.
+         * @returns {boolean} True if state was loaded, false otherwise.
+         */
+        function loadQuizState() {
+            const savedState = sessionStorage.getItem(QUIZ_STATE_KEY);
+            if (savedState) {
+                try {
+                    const loaded = JSON.parse(savedState);
+                    state.currentSlideIndex = loaded.currentSlideIndex || 0;
+                    state.currentQuestionIndex = loaded.currentQuestionIndex || 0;
+                    state.userAnswers = loaded.userAnswers || [];
+                    // Recalculate scores based on loaded answers to initialize slideScores array correctly
+                    calculateScore(); 
+                    return true;
+                } catch (e) {
+                    console.error("Failed to parse saved quiz state:", e);
+                    return false;
+                }
+            }
+            return false;
+        }
+
+        /**
+         * Saves the final score and marks the quiz as completed permanently.
+         */
+        function finalizeQuizState(resultType) {
+            // Disable reload confirmation when quiz is finished
+            isQuizActive = false;
+            window.removeEventListener('beforeunload', handleBeforeUnload);
+
+            // Calculate final score before clearing or setting flags
+            const totalCorrect = calculateScore();
+            
+            const finalData = {
+                totalCorrect: totalCorrect,
+                slideScores: state.slideScores,
+                totalQuestions: quizData.flat(2).length
+            };
+
+            sessionStorage.setItem(FINAL_SCORE_KEY, JSON.stringify(finalData));
+            sessionStorage.setItem(QUIZ_END_FLAG_KEY, 'true');
+            sessionStorage.setItem(QUIZ_RESULT_TYPE_KEY, resultType);
+
+            // Clear IN_PROGRESS state variables, as the FINAL state is now saved
+            sessionStorage.removeItem('quizTimeRemaining'); 
+            sessionStorage.removeItem(QUIZ_STATE_KEY); 
+        }
+
+        // --- TIMER FUNCTIONS ---
+
+        /**
+         * Formats seconds into MM:SS format.
+         * @param {number} totalSeconds
+         * @returns {string} Formatted time string.
+         */
+        function formatTime(totalSeconds) {
+            const minutes = Math.floor(totalSeconds / 60);
+            const seconds = totalSeconds % 60;
+            const formattedMinutes = String(minutes).padStart(2, '0');
+            const formattedSeconds = String(seconds).padStart(2, '0');
+            return `${formattedMinutes}:${formattedSeconds}`;
+        }
+
+        /**
+         * Clears the timer.
+         */
+        function stopTimer() {
+            if (timerInterval) {
+                clearInterval(timerInterval);
+                timerInterval = null;
+            }
+        }
+
+        /**
+         * Handles the quiz ending due to time running out, and sets the TIMED_OUT status.
+         */
+        function quizTimeout() {
+            stopTimer();
+            finalizeQuizState('TIMED_OUT'); 
+
+            // Disable all interactive elements immediately (options and next button)
+            optionsContainer.querySelectorAll('button').forEach(btn => btn.disabled = true);
+            nextButton.disabled = true;
+            nextButton.classList.add('opacity-50', 'cursor-not-allowed');
+
+            // Show an intermediary message in the results area
+            quizArea.classList.add('hidden');
+            resultsArea.classList.remove('hidden');
+            
+            // Set up the message box look for timeout
+            document.querySelector('#results-area h2').textContent = "Time's Up! Quiz Halted.";
+            document.querySelector('#results-area h2').classList.remove('text-green-700', 'text-indigo-700');
+            document.querySelector('#results-area h2').classList.add('text-red-700');
+
+            document.getElementById('final-score').textContent = "Your time limit of 5 minutes has been reached.";
+            document.getElementById('final-score').classList.remove('text-gray-800', 'text-indigo-600');
+            document.getElementById('final-score').classList.add('text-xl', 'font-semibold', 'text-gray-700');
+            
+            const scoreDetailsEl = document.getElementById('score-details');
+            scoreDetailsEl.innerHTML = `
+                <p class="text-lg text-gray-700 text-center mb-4">
+                    The quiz is now complete. We will calculate your final marks based on the answers submitted before the timer expired.
+                </p>
+            `;
+            
+            // Change the action button to calculate/show results
+            actionButton.textContent = 'Show My Marks';
+            actionButton.onclick = showFinalResultsFromTimeout; 
+            
+            // Style the button
+            actionButton.classList.remove('bg-pink-600', 'hover:bg-pink-700');
+            actionButton.classList.add('bg-indigo-600', 'hover:bg-indigo-700');
+        }
+
+        /**
+         * Transition from the Timeout screen to the Final Results screen.
+         */
+        function showFinalResultsFromTimeout() {
+            // This is the action that transitions the view from 'TIMED_OUT' message to the final marks page
+            finalizeQuizState('COMPLETED'); // Set status to COMPLETED so reloads go straight to marks
+            displayFinalResults();
+        }
+
+        /**
+         * Starts the quiz countdown timer.
+         */
+        function startTimer() {
+            if (timerInterval) clearInterval(timerInterval);
+
+            // If time is already zero or less (e.g., loaded from storage), don't start, just trigger timeout
+            if (timeRemaining <= 0) {
+                quizTimeout();
+                return;
+            }
+
+            timerDisplayEl.textContent = formatTime(timeRemaining); // Initial display update
+            
+            timerInterval = setInterval(() => {
+                timeRemaining--;
+                sessionStorage.setItem('quizTimeRemaining', timeRemaining); // Save time state on every tick
+                timerDisplayEl.textContent = formatTime(timeRemaining);
+
+                if (timeRemaining <= 10) { // Highlight when under 10 seconds
+                    timerDisplayEl.classList.add('bg-red-100');
+                } else {
+                    timerDisplayEl.classList.remove('bg-red-100');
+                }
+
+                if (timeRemaining <= 0) {
+                    quizTimeout();
+                }
+            }, 1000);
+        }
+
+        // --- CORE QUIZ LOGIC ---
+
+        /**
+         * Calculates the overall score and updates the slideScores array.
+         * @returns {number} The total correct answers.
+         */
+        function calculateScore() {
+            let totalCorrect = 0;
+            
+            // Recalculate all scores up to the current point
+            // This now correctly sets up for 2 slides of 10 questions each
+            state.slideScores = Array(quizData.length).fill(null).map(() => ({ correct: 0, total: 10 }));
+
+            quizData.forEach((slide, slideIndex) => {
+                slide.questions.forEach((q, qIndex) => {
+                    // Global index calculation logic remains: (slide index * 10) + q index
+                    const globalIndex = slideIndex * 10 + qIndex;
+                    const userAnswer = state.userAnswers[globalIndex];
+
+                    if (userAnswer !== undefined && userAnswer !== null) {
+                         // Support both multiple-choice (number index) and fill (string) types
+                         if (q.type === 'fill') {
+                             // compare trimmed, case-insensitive
+                             if (String(userAnswer).trim().toLowerCase() === String(q.a).trim().toLowerCase()) {
+                                 totalCorrect++;
+                                 state.slideScores[slideIndex].correct++;
+                             }
+                         } else {
+                             // multiple-choice (original behavior)
+                             if (userAnswer === q.a) {
+                                totalCorrect++;
+                                state.slideScores[slideIndex].correct++;
+                            }
+                         }
+                    }
+                });
+            });
+
+            return totalCorrect;
+        }
+
+        /**
+         * Renders the current question and its options (supports 'fill' type).
+         */
+        function renderQuestion() {
+            quizArea.classList.remove('hidden');
+            resultsArea.classList.add('hidden');
+            feedbackMessageEl.classList.add('hidden');
+            
+            // If the quiz state leads to an already finished position, immediately show results.
+            if (state.currentSlideIndex >= quizData.length) {
+                 displayFinalResults();
+                 return;
+            }
+            
+            // Reset button state for safety
+            nextButton.disabled = true;
+            nextButton.classList.add('opacity-50', 'cursor-not-allowed');
+
+            const currentSlide = quizData[state.currentSlideIndex];
+            const currentQ = currentSlide.questions[state.currentQuestionIndex];
+            
+            // Update status bar
+            slideTitleEl.textContent = currentSlide.title;
+            const totalQuestions = currentSlide.questions.length;
+            questionCounterEl.textContent = `Question ${state.currentQuestionIndex + 1} of ${totalQuestions}`;
+
+            // Update question text
+            questionTextEl.textContent = currentQ.q;
+
+            // Clear previous options / inputs
+            optionsContainer.innerHTML = '';
+
+            const globalIndex = state.currentSlideIndex * 10 + state.currentQuestionIndex;
+            const selectedOption = state.userAnswers[globalIndex];
+
+            if (currentQ.type === 'fill') {
+                // Render a text input for fill-in-the-blank
+                const wrapper = document.createElement('div');
+                wrapper.className = 'w-full';
+
+                const input = document.createElement('input');
+                input.type = 'text';
+                input.value = selectedOption ?? '';
+                input.placeholder = 'Type your answer here...';
+                input.className = 'w-full p-4 rounded-lg border border-gray-200 text-gray-800 focus:outline-none focus:ring-4 focus:ring-indigo-200';
+
+                // Save input on change and enable next button when non-empty
+                input.addEventListener('input', (e) => {
+                    const val = e.target.value;
+                    state.userAnswers[globalIndex] = val;
+                    saveQuizState();
+
+                    // enable next button when non-empty (non-whitespace)
+                    if (String(val).trim() !== '') {
+                        nextButton.disabled = false;
+                        nextButton.classList.remove('opacity-50', 'cursor-not-allowed');
+                    } else {
+                        nextButton.disabled = true;
+                        nextButton.classList.add('opacity-50', 'cursor-not-allowed');
+                    }
+                });
+
+                wrapper.appendChild(input);
+                optionsContainer.appendChild(wrapper);
+
+                // If previously entered and non-empty, enable next immediately
+                if (selectedOption && String(selectedOption).trim() !== '') {
+                    nextButton.disabled = false;
+                    nextButton.classList.remove('opacity-50', 'cursor-not-allowed');
+                }
+            } else {
+                // Render options (existing multiple-choice behavior)
+                currentQ.options.forEach((option, index) => {
+                    const button = document.createElement('button');
+                    const isSelected = selectedOption === index;
+                    
+                    button.className = `answer-btn w-full text-left p-4 rounded-lg font-medium shadow transition-colors duration-200 focus:outline-none focus:ring-4 focus:ring-indigo-300`;
+                    
+                    let baseClasses = 'bg-gray-100 text-gray-800 hover:bg-indigo-100 border border-gray-200';
+                    
+                    if (isSelected) {
+                        baseClasses = 'bg-indigo-600 text-white shadow-lg border-indigo-700 selected';
+                    }
+
+                    button.classList.add(...baseClasses.split(' '));
+                    
+                    const optionLabel = String.fromCharCode(65 + index); // A, B, C, D
+                    button.innerHTML = `<span class="font-bold mr-3">${optionLabel}.</span> ${option}`;
+                    
+                    // If the timer has run out, buttons must be disabled regardless of state
+                    if (timerInterval === null && timeRemaining <= 0) {
+                        button.disabled = true;
+                    } else {
+                        button.onclick = () => handleAnswerSelection(index, button);
+                    }
+                    
+                    optionsContainer.appendChild(button);
+                });
+            }
+
+            // Update next button status based on current answer selection
+            updateNextButton();
+        }
+
+        /**
+         * Updates the state with the user's selection for multiple-choice and enables next button.
+         * (Fill answers are saved by the input handler in renderQuestion.)
+         */
+        function handleAnswerSelection(selectedIndex, selectedButton) {
+            // If quiz is over due to timeout, ignore input
+            if (timerInterval === null && timeRemaining <= 0) return;
+
+            // Global index calculation
+            const globalIndex = state.currentSlideIndex * 10 + state.currentQuestionIndex;
+            state.userAnswers[globalIndex] = selectedIndex;
+            
+            // Save state immediately after selecting an answer
+            saveQuizState(); 
+
+            // Visual feedback for selection
+            Array.from(optionsContainer.children).forEach(btn => {
+                btn.classList.remove('bg-indigo-600', 'text-white', 'shadow-lg', 'border-indigo-700', 'selected');
+                btn.classList.add('bg-gray-100', 'text-gray-800', 'hover:bg-indigo-100', 'border-gray-200');
+            });
+            
+            selectedButton.classList.remove('bg-gray-100', 'text-gray-800', 'hover:bg-indigo-100', 'border-gray-200');
+            selectedButton.classList.add('bg-indigo-600', 'text-white', 'shadow-lg', 'border-indigo-700', 'selected');
+
+            // Enable next button
+            nextButton.disabled = false;
+            nextButton.classList.remove('opacity-50', 'cursor-not-allowed');
+            updateNextButton(); // Update button text just in case
+        }
+
+        /**
+         * Updates the next button's enabled/disabled state based on the current question type and answer presence.
+         */
+        function updateNextButton() {
+            const currentSlide = quizData[state.currentSlideIndex];
+            const isLastQuestionInSlide = state.currentQuestionIndex === currentSlide.questions.length - 1;
+            const isLastSlide = state.currentSlideIndex === quizData.length - 1;
+            
+            if (isLastQuestionInSlide && isLastSlide) {
+                nextButton.textContent = 'Finish Quiz & View Results';
+            } else if (isLastQuestionInSlide) {
+                // If it's the last question of the slide, but not the last slide overall
+                const nextSlideIndex = state.currentSlideIndex + 1;
+                nextButton.textContent = `Submit Slide ${state.currentSlideIndex + 1} & Go to Slide ${nextSlideIndex + 1}`;
+            } else {
+                nextButton.textContent = 'Next Question';
+            }
+            
+            // Re-check if an answer is selected for the current question to enable/disable button
+            const globalIndex = state.currentSlideIndex * 10 + state.currentQuestionIndex;
+            const currentQ = quizData[state.currentSlideIndex].questions[state.currentQuestionIndex];
+
+            if (currentQ.type === 'fill') {
+                const ans = state.userAnswers[globalIndex];
+                if (ans === undefined || ans === null || String(ans).trim() === '') {
+                    nextButton.disabled = true;
+                    nextButton.classList.add('opacity-50', 'cursor-not-allowed');
+                } else {
+                    nextButton.disabled = false;
+                    nextButton.classList.remove('opacity-50', 'cursor-not-allowed');
+                }
+            } else {
+                if (state.userAnswers[globalIndex] === undefined || state.userAnswers[globalIndex] === null) {
+                    nextButton.disabled = true;
+                    nextButton.classList.add('opacity-50', 'cursor-not-allowed');
+                } else {
+                    nextButton.disabled = false;
+                    nextButton.classList.remove('opacity-50', 'cursor-not-allowed');
+                }
+            }
+        }
+
+        /**
+         * Moves the quiz state to the next slide and renders the first question.
+         */
+        function moveToNextSlide() {
+            // If quiz is over due to timeout, ignore input
+            if (timerInterval === null && timeRemaining <= 0) return;
+            
+            if (state.currentSlideIndex < quizData.length - 1) {
+                state.currentSlideIndex++;
+                state.currentQuestionIndex = 0;
+                renderQuestion();
+                saveQuizState(); // Save state after moving slides
+            }
+        }
+
+        /**
+         * Shows the intermediate results after completing a slide.
+         */
+        function showSlideResults() {
+            // Calculate score for the *current* slide (which is the one just finished)
+            const slideIndex = state.currentSlideIndex;
+            calculateScore(); 
+            const score = state.slideScores[slideIndex];
+            const slideTitle = quizData[slideIndex].title;
+            const nextSlideTitle = quizData[slideIndex + 1].title;
+
+            quizArea.classList.add('hidden');
+            resultsArea.classList.remove('hidden');
+
+            // Update header for intermediate results
+            document.querySelector('#results-area h2').textContent = `Slide ${slideIndex + 1} Complete: Marks`;
+            document.querySelector('#results-area h2').classList.remove('text-green-700', 'text-red-700');
+            document.querySelector('#results-area h2').classList.add('text-indigo-700');
+
+            document.getElementById('final-score').textContent = `${score.correct} / ${score.total}`;
+            document.getElementById('final-score').classList.add('text-indigo-600');
+            document.getElementById('final-score').classList.remove('text-gray-800', 'text-xl', 'font-semibold', 'text-gray-700');
+
+
+            const scoreDetailsEl = document.getElementById('score-details');
+            scoreDetailsEl.innerHTML = `
+                <p class="text-lg text-center text-gray-700 mb-6 font-medium">
+                    You secured **${score.correct} out of ${score.total}** on the **${slideTitle}** section.
+                </p>
+            `;
+            
+            // Set up button to move to next slide
+            actionButton.textContent = `Start ${nextSlideTitle}`;
+            actionButton.onclick = moveToNextSlide;
+
+            // Ensure button styling is correct for progression
+            actionButton.classList.add('bg-indigo-600', 'hover:bg-indigo-700');
+            actionButton.classList.remove('bg-pink-600', 'hover:bg-pink-700');
+        }
+
+        /**
+         * Advances the quiz to the next question or shows results.
+         */
+        function nextQuestion() {
+            const currentSlide = quizData[state.currentSlideIndex];
+            const isLastQuestionInSlide = state.currentQuestionIndex === currentSlide.questions.length - 1;
+            const isLastSlide = state.currentSlideIndex === quizData.length - 1;
+
+            if (timerInterval === null && timeRemaining <= 0) {
+                // If the user tries to click next after timeout, just show final results
+                displayFinalResults();
+                return;
+            }
+
+            if (!isLastQuestionInSlide) {
+                // 1. Move to the next question in the current slide
+                state.currentQuestionIndex++;
+                renderQuestion();
+                saveQuizState(); // Save state after moving questions
+            } else {
+                // 2. Last question in the slide
+                if (isLastSlide) {
+                    // Last question of the last slide - show final results
+                    showResultsScreen();
+                } else {
+                    // Last question of a middle slide - show intermediate slide results
+                    showSlideResults();
+                }
+            }
+        }
+        
+        /**
+         * Marks quiz as completed and saves the final state.
+         */
+        function showResultsScreen() {
+            finalizeQuizState('COMPLETED'); 
+            displayFinalResults();
+        }
+
+        /**
+         * Logic to display the final results from saved FINAL_SCORE_KEY.
+         * Called both on immediate completion and on reload after completion/timeout.
+         */
+        function displayFinalResults() {
+            stopTimer();
+            
+            const finalDataJson = sessionStorage.getItem(FINAL_SCORE_KEY);
+            if (!finalDataJson) {
+                // Should not happen if flags are set correctly, but handle gracefully
+                console.error("No final score data found to display.");
+                return;
+            }
+            
+            const finalData = JSON.parse(finalDataJson);
+            const { totalCorrect, slideScores } = finalData;
+
+            quizArea.classList.add('hidden');
+            resultsArea.classList.remove('hidden');
+
+            document.querySelector('#results-area h2').textContent = 'Final Quiz Marks';
+            document.querySelector('#results-area h2').classList.remove('text-indigo-700', 'text-red-700');
+            document.querySelector('#results-area h2').classList.add('text-green-700');
+
+            // Set the main result title: e.g., "25 Marks / 20" (Hardcoded 20 as requested)
+            document.getElementById('final-score').textContent = `${totalCorrect} Marks / 20`;
+            document.getElementById('final-score').classList.remove('text-indigo-600', 'text-xl', 'font-semibold', 'text-gray-700');
+            document.getElementById('final-score').classList.add('text-gray-800');
+            
+            const scoreDetailsEl = document.getElementById('score-details');
+            scoreDetailsEl.innerHTML = '<h3 class="text-xl font-bold mb-3 text-indigo-700 border-b pb-2">Slide Breakdown:</h3>';
+
+            // Add breakdown of all slides
+            slideScores.forEach((score, index) => {
+                const slide = quizData[index];
+                const percentage = ((score.correct / score.total) * 100).toFixed(0);
+                const color = score.correct >= 7 ? 'text-green-600' : score.correct >= 4 ? 'text-yellow-600' : 'text-red-600';
+                
+                scoreDetailsEl.innerHTML += `
+                    <div class="flex justify-between items-center py-2 border-t border-gray-100">
+                        <span class="font-medium text-gray-700">${slide.title}:</span>
+                        <span class="font-extrabold ${color}">${score.correct}/${score.total} (${percentage}%)</span>
+                    </div>
+                `;
+            });
+            
+            // Set up the "Login" button
+            actionButton.textContent = 'Go to Login Page';
+            actionButton.onclick = handleLogin;
+            
+            // Style the button
+            actionButton.classList.add('bg-indigo-600', 'hover:bg-indigo-700');
+            actionButton.classList.remove('bg-pink-600', 'hover:bg-pink-700');
+        }
+
+        // --- INITIALIZATION ---
+        window.onload = () => {
+            const isFinished = sessionStorage.getItem(QUIZ_END_FLAG_KEY) === 'true';
+            const resultType = sessionStorage.getItem(QUIZ_RESULT_TYPE_KEY);
+            
+            if (isFinished) {
+                // If the quiz is already finished (completed or timed out), do not restart.
+                // Reload warning is removed by finalizeQuizState which is called in quizTimeout/showResultsScreen
+                if (resultType === 'COMPLETED') {
+                    displayFinalResults();
+                } else if (resultType === 'TIMED_OUT') {
+                    // Call quizTimeout to re-display the time's up message and the 'Show My Marks' button
+                    quizTimeout();
+                }
+                return; // Stop initialization flow
+            }
+
+            // If not finished, add reload warning, load progress, and start the timer
+            isQuizActive = true;
+            window.addEventListener('beforeunload', handleBeforeUnload);
+            loadQuizState(); 
+            renderQuestion(); 
+            startTimer(); 
+        };
+
+    </script>
+</body>
+</html>
